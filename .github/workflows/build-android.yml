@@ -62,26 +62,25 @@ jobs:
       - name: Verify Keystore
         run: |
           if [ -f "composeApp/release.keystore" ]; then
-            echo "✓ Keystore file exists"
+            echo "Keystore file exists"
             ls -la composeApp/release.keystore
           else
-            echo "✗ Keystore file not found"
+            echo "Keystore file not found"
           fi
 
       - name: Build Signed Release APK
-        working-directory: composeApp
         env:
-          KEYSTORE_FILE: release.keystore
+          KEYSTORE_FILE: composeApp/release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          if [ -f "release.keystore" ]; then
-            echo "✓ Keystore found, building SIGNED release APK..."
-            ../gradlew assembleRelease
+          if [ -f "composeApp/release.keystore" ]; then
+            echo "Keystore found, building SIGNED release APK..."
+            ./gradlew :composeApp:assembleRelease
           else
-            echo "✗ No keystore found, building UNSIGNED release APK..."
-            ../gradlew assembleRelease
+            echo "No keystore found, building UNSIGNED release APK..."
+            ./gradlew :composeApp:assembleRelease
           fi
 
       - name: Upload Debug APK
