@@ -36,6 +36,9 @@ jobs:
         with:
           cache-disabled: true
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Debug Secrets
         run: |
           if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
