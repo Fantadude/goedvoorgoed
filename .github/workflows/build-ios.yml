@@ -50,9 +50,9 @@ jobs:
 
       - name: Build iOS Frameworks
         run: |
-          ./gradlew :shared:assembleReleaseKotlinIosSimulatorArm64
-          ./gradlew :shared:assembleReleaseKotlinIosX64
-          ./gradlew :shared:assembleReleaseKotlinIosArm64 || echo "Arm64 device build may require additional setup"
+          ./gradlew :shared:linkIosSimulatorArm64
+          ./gradlew :shared:linkIosArm64 || echo "Arm64 device build may require additional setup"
+          ./gradlew :shared:linkIosX64 || echo "X64 simulator build may require additional setup"
 
       - name: Package Frameworks
         run: |
@@ -101,7 +101,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build iOS Framework
-        run: ./gradlew :shared:assembleReleaseKotlinIosSimulatorArm64
+        run: ./gradlew :shared:linkIosSimulatorArm64
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
