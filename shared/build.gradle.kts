@@ -16,24 +16,9 @@ kotlin {
         }
 }
 
-    iosX64 {
-        binaries.framework {
-            baseName = "shared"
-            isStatic = true
-        }
-    }
-    iosArm64 {
-        binaries.framework {
-            baseName = "shared"
-            isStatic = true
-        }
-    }
-    iosSimulatorArm64 {
-        binaries.framework {
-            baseName = "shared"
-            isStatic = true
-        }
-    }
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
 
     sourceSets {
         commonMain.dependencies {
