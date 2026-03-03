@@ -16,11 +16,19 @@ kotlin {
         }
 }
 
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
-
-    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
+    iosX64 {
+        binaries.framework {
+            baseName = "shared"
+            isStatic = true
+        }
+    }
+    iosArm64 {
+        binaries.framework {
+            baseName = "shared"
+            isStatic = true
+        }
+    }
+    iosSimulatorArm64 {
         binaries.framework {
             baseName = "shared"
             isStatic = true
