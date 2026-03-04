@@ -271,7 +271,7 @@ fun HomeScreen(
     ) {
         item {
             Box(
-                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary).padding(vertical = 16.dp, horizontal = 24.dp)
+                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary).padding(vertical = 12.dp, horizontal = 16.dp)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -280,7 +280,7 @@ fun HomeScreen(
                     Image(
                         painter = painterResource(R.drawable.logo_gvg),
                         contentDescription = stringResource(R.string.logo_gvg),
-                        modifier = Modifier.size(80.dp)
+                        modifier = Modifier.size(64.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -433,7 +433,7 @@ fun NieuwsScreen(onBackClick: () -> Unit = {}, onOpenArticle: (NewsItem) -> Unit
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "GOED Nieuws!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text(text = "GOED Nieuws!", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
                 actions = {
                     IconButton(onClick = { refreshTrigger++ }, enabled = !isLoading) {
@@ -576,7 +576,7 @@ fun ContactScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Contact", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text("Contact", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
             )
@@ -609,7 +609,7 @@ fun HalenBrengenScreen(onBackClick: () -> Unit = {}, onOpenEmail: (String, Strin
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Halen & Brengen", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text("Halen & Brengen", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
             )
@@ -794,7 +794,7 @@ fun OpeningstijdenScreen(onBackClick: () -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Openingstijden", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text("Openingstijden", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
             )
@@ -827,7 +827,7 @@ fun CherityReUseScreen(onBackClick: () -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Cherity Re-Use", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text("Cherity Re-Use", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
             )
