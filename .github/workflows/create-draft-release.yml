@@ -1,0 +1,167 @@
+name: Create Draft Release from Latest APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., v1.0.0). Leave empty for auto-generated.'
+        required: false
+        type: string
+      release_name:
+        description: 'Release name. Leave empty for auto-generated.'
+        required: false
+        type: string
+
+jobs:
+  create-draft-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get Latest Successful Workflow Run
+        id: get-run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Get the latest successful run of build-android workflow
+          LATEST_RUN=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build-android.yml/runs?status=success&per_page=1" | \
+            jq -r '.workflow_runs[0].id // empty')
+          
+          if [ -z "$LATEST_RUN" ]; then
+            echo "❌ No successful workflow runs found!"
+            exit 1
+          fi
+          
+          echo "✅ Found latest successful run: $LATEST_RUN"
+          echo "run_id=$LATEST_RUN" >> $GITHUB_OUTPUT
+
+      - name: Download APK Artifacts
+        id: download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.get-run.outputs.run_id }}
+        run: |
+          mkdir -p downloaded-artifacts
+          
+          # Get list of artifacts for this run
+          ARTIFACTS=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID/artifacts")
+          
+          # Download release APK
+          RELEASE_URL=$(echo "$ARTIFACTS" | jq -r '.artifacts[] | select(.name == "android-release-apk") | .archive_download_url')
+          if [ -n "$RELEASE_URL" ] && [ "$RELEASE_URL" != "null" ]; then
+            curl -s -L -H "Authorization: Bearer $GH_TOKEN" -o release-apk.zip "$RELEASE_URL"
+            unzip -q release-apk.zip -d downloaded-artifacts/release/
+            echo "✅ Downloaded release APK"
+          fi
+          
+          # Download debug APK
+          DEBUG_URL=$(echo "$ARTIFACTS" | jq -r '.artifacts[] | select(.name == "android-debug-apk") | .archive_download_url')
+          if [ -n "$DEBUG_URL" ] && [ "$DEBUG_URL" != "null" ]; then
+            curl -s -L -H "Authorization: Bearer $GH_TOKEN" -o debug-apk.zip "$DEBUG_URL"
+            unzip -q debug-apk.zip -d downloaded-artifacts/debug/
+            echo "✅ Downloaded debug APK"
+          fi
+          
+          # List what we have
+          echo "📦 Downloaded artifacts:"
+          find downloaded-artifacts -name "*.apk" -type f
+          
+          # Set output for release step
+          APK_COUNT=$(find downloaded-artifacts -name "*.apk" -type f | wc -l)
+          if [ "$APK_COUNT" -eq 0 ]; then
+            echo "❌ No APK files found!"
+            exit 1
+          fi
+          
+          echo "apk_count=$APK_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Generate Release Info
+        id: release-info
+        run: |
+          # Auto-generate tag if not provided
+          if [ -n "${{ github.event.inputs.release_tag }}" ]; then
+            TAG="${{ github.event.inputs.release_tag }}"
+          else
+            TAG="v$(date +'%Y.%m.%d')-${{ github.run_number }}"
+          fi
+          
+          # Auto-generate name if not provided
+          if [ -n "${{ github.event.inputs.release_name }}" ]; then
+            NAME="${{ github.event.inputs.release_name }}"
+          else
+            NAME="Release $TAG - $(date +'%Y-%m-%d')"
+          fi
+          
+          # Generate release notes
+          COMMIT_SHA=${{ github.sha }}
+          SHORT_SHA=$(echo $COMMIT_SHA | cut -c1-7)
+          
+          NOTES="## What's Included
+          
+          This draft release was automatically created from the latest successful build.
+          
+          - **Build Date:** $(date +'%Y-%m-%d %H:%M:%S UTC')
+          - **Commit:** \`$SHORT_SHA\`
+          
+          ## Artifacts
+          
+          - \`android-release-apk\`: Production-ready APK
+          - \`android-debug-apk\`: Debug APK with development features
+          
+          ## Installation
+          
+          1. Download the desired APK
+          2. Enable \"Install from Unknown Sources\" on your Android device
+          3. Install the APK
+          
+          ---
+          *This is a draft release. Please review before publishing.*"
+          
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          
+          # Write multi-line release notes
+          {
+            echo 'notes<<EOF'
+            echo "$NOTES"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Create Draft Release
+        id: create-release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.release-info.outputs.tag }}
+          name: ${{ steps.release-info.outputs.name }}
+          body: ${{ steps.release-info.outputs.notes }}
+          draft: true
+          prerelease: false
+          files: downloaded-artifacts/**/*.apk
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "📦 Release Creation Summary"
+          echo "=========================================="
+          if [ "${{ steps.create-release.outputs.url }}" != "" ]; then
+            echo "✅ Draft Release Created!"
+            echo "🔗 URL: ${{ steps.create-release.outputs.url }}"
+            echo "🏷️  Tag: ${{ steps.release-info.outputs.tag }}"
+          else
+            echo "❌ Release creation failed"
+          fi
+          echo ""
+          echo "📱 APKs included:"
+          find downloaded-artifacts -name "*.apk" -type f 2>/dev/null || echo "None found"
+          echo "=========================================="
