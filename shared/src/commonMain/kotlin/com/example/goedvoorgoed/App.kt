@@ -1,6 +1,7 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.example.goedvoorgoed
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -324,7 +325,6 @@ private fun QuickNavButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NieuwsScreen(onBackClick: () -> Unit = {}, onOpenArticle: (NewsItem) -> Unit = {}) {
     val scraper = remember { GoedvoorgoedScraper() }
@@ -468,7 +468,6 @@ private fun NewsCard(newsItem: NewsItem, onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactScreen(
     onBackClick: () -> Unit = {}
@@ -495,7 +494,6 @@ fun ContactScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HalenBrengenScreen(onBackClick: () -> Unit = {}) {
     Scaffold(
@@ -534,7 +532,6 @@ fun HalenBrengenScreen(onBackClick: () -> Unit = {}) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OpeningstijdenScreen(onBackClick: () -> Unit = {}) {
     val locations = listOf(
@@ -568,7 +565,6 @@ fun OpeningstijdenScreen(onBackClick: () -> Unit = {}) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CherityReUseScreen(onBackClick: () -> Unit = {}) {
     Scaffold(
@@ -591,7 +587,6 @@ fun CherityReUseScreen(onBackClick: () -> Unit = {}) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleDetailScreen(
     newsItem: NewsItem,
