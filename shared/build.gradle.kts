@@ -20,6 +20,18 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
+    // Configure iOS framework binaries
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "shared"
+            isStatic = true
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.compose.runtime)

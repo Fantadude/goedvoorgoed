@@ -48,7 +48,7 @@ jobs:
           fi
 
       - name: Build Debug APK
-        run: ./gradlew :composeApp:assembleDebug --info | grep -E "(signing|Sign|KEYSTORE)" || true
+        run: ./gradlew :composeApp:assembleDebug --console=plain
 
       - name: Decode Keystore for Release Signing
         env:
@@ -72,6 +72,7 @@ jobs:
           fi
 
       - name: Build Signed Release APK
+        timeout-minutes: 15
         env:
           KEYSTORE_FILE: release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -80,10 +81,10 @@ jobs:
         run: |
           if [ -f "composeApp/release.keystore" ]; then
             echo "Keystore found, building SIGNED release APK..."
-            ./gradlew :composeApp:assembleRelease
+            ./gradlew :composeApp:assembleRelease --console=plain
           else
             echo "No keystore found, building UNSIGNED release APK..."
-            ./gradlew :composeApp:assembleRelease
+            ./gradlew :composeApp:assembleRelease --console=plain
           fi
 
       - name: Upload Debug APK
