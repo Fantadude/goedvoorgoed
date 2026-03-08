@@ -112,13 +112,18 @@ jobs:
         run: |
           cd iosApp
           
+          # Create build directory first
+          mkdir -p build/Products
+          
           # Build for simulator (does not require signing)
           # Use buildSettings to specify the output directory
+          set -o pipefail
           xcodebuild build \
             -project GoedVoorGoed.xcodeproj \
             -scheme GoedVoorGoed \
             -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" \
             -configuration Release \
+            -derivedDataPath "$(pwd)/build/DerivedData" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -130,6 +135,14 @@ jobs:
           echo "=== Build directory structure ==="
           find build -type d -name "*.app" 2>/dev/null || echo "No .app directories found"
           ls -la build/Products/ 2>/dev/null || echo "No Products directory"
+          
+          # Verify the app was built
+          if [ ! -d "build/Products/Release-iphonesimulator/GoedVoorGoed.app" ]; then
+            echo "❌ Build failed - app bundle not found"
+            echo "=== Build logs location ==="
+            find build -name "*.log" 2>/dev/null | head -5
+            exit 1
+          fi
 
       - name: Package Unsigned IPA
         run: |
