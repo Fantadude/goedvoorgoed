@@ -57,8 +57,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build iOS Framework (Simulator)
-        run: ./gradlew :shared:linkReleaseFrameworkIosSimulatorArm64
+      - name: Build iOS Framework (Device)
+        run: ./gradlew :shared:linkReleaseFrameworkIosArm64
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -94,7 +94,7 @@ jobs:
                   PROVISIONING_PROFILE_SPECIFIER: ""
                   SWIFT_VERSION: "5.0"
                   LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
-                  FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/../shared/build/bin/iosSimulatorArm64/releaseFramework"
+                  FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/../shared/build/bin/iosArm64/releaseFramework"
                   OTHER_LDFLAGS: "$(inherited) -framework shared"
                   ARCHS: "arm64"
                   ONLY_ACTIVE_ARCH: NO
@@ -108,27 +108,27 @@ jobs:
           # Generate the Xcode project
           xcodegen generate
 
-      - name: Build for iOS Simulator
+      - name: Build for iOS Device
         run: |
           cd iosApp
           
           # Create build directory first
           mkdir -p build/Products
           
-          # Build for simulator (does not require signing)
-          # Use buildSettings to specify the output directory
+          # Build for device (does not require signing for unsigned IPA)
+          # Use generic/platform=iOS to build for device architecture
           set -o pipefail
           xcodebuild build \
             -project GoedVoorGoed.xcodeproj \
             -scheme GoedVoorGoed \
-            -destination "platform=iOS Simulator,name=iPhone 16" \
+            -destination "generic/platform=iOS" \
             -configuration Release \
             -derivedDataPath "$(pwd)/build/DerivedData" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             PROVISIONING_PROFILE="" \
-            CONFIGURATION_BUILD_DIR="$(pwd)/build/Products/Release-iphonesimulator" \
+            CONFIGURATION_BUILD_DIR="$(pwd)/build/Products/Release-iphoneos" \
             | xcpretty || cat
           
           # Debug: Show build directory structure
@@ -137,7 +137,7 @@ jobs:
           ls -la build/Products/ 2>/dev/null || echo "No Products directory"
           
           # Verify the app was built
-          if [ ! -d "build/Products/Release-iphonesimulator/GoedVoorGoed.app" ]; then
+          if [ ! -d "build/Products/Release-iphoneos/GoedVoorGoed.app" ]; then
             echo "❌ Build failed - app bundle not found"
             echo "=== Build logs location ==="
             find build -name "*.log" 2>/dev/null | head -5
@@ -159,8 +159,8 @@ jobs:
           APP_PATH=""
           
           # Check the Products directory first (where we told xcodebuild to put it)
-          if [ -d "build/Products/Release-iphonesimulator/GoedVoorGoed.app" ]; then
-            APP_PATH="build/Products/Release-iphonesimulator/GoedVoorGoed.app"
+          if [ -d "build/Products/Release-iphoneos/GoedVoorGoed.app" ]; then
+            APP_PATH="build/Products/Release-iphoneos/GoedVoorGoed.app"
             echo "Found app in Products directory"
           fi
           
@@ -176,12 +176,12 @@ jobs:
             mkdir -p build/Payload
             cp -R "$APP_PATH" build/Payload/
             
-            # Create IPA (unsigned, simulator only)
+            # Create IPA (unsigned, for device)
             cd build
             zip -r ../GoedVoorGoed-unsigned.ipa Payload
             cd ..
             
-            echo "✅ Created unsigned IPA for simulator"
+            echo "✅ Created unsigned IPA for device (TrollStore compatible)"
             ls -la GoedVoorGoed-unsigned.ipa
           else
             echo "❌ App not found!"
@@ -254,7 +254,8 @@ jobs:
           - **Build Date:** $(date +'%Y-%m-%d %H:%M:%S UTC')
           - **Commit:** \`$SHORT_SHA\`
           - **Branch:** ${{ github.ref_name }}
-          - **Target:** iOS Simulator (arm64)
+          - **Target:** iOS Device (arm64) - TrollStore compatible
+          - **Min iOS Version:** 13.0
           
           ### Features
           This IPA includes the same UI look and feel as the Android app:
@@ -282,19 +283,20 @@ jobs:
           4. Enter your Apple ID credentials
           5. Install the app on your device
           
-          #### Option 3: TrollStore (iOS 14.0 - 17.0)
-          For devices running iOS 14.0 - 17.0, TrollStore allows permanent installation without re-signing.
+          #### Option 3: TrollStore (iOS 14.0 - 17.0) ⭐ RECOMMENDED
+          For devices running iOS 14.0 - 17.0, TrollStore allows **permanent installation without re-signing**.
           
-          ### Running in Simulator
-          This IPA can also be extracted and run directly in the iOS Simulator on macOS:
-          ```
-          xcrun simctl install booted Payload/GoedVoorGoed.app
-          ```
+          **Compatible devices include:**
+          - iPhone 6s, 6s Plus, SE (1st gen) - iOS 14.0-15.x
+          - iPhone 7, 7 Plus - iOS 14.0-15.x  
+          - iPhone 8, 8 Plus, X - iOS 14.0-16.x
+          - iPhone XS, XR and newer - iOS 14.0-17.0
           
           ### Important Notes
           - ⚠️ This is an **unsigned** IPA and requires sideloading
-          - 📱 Compatible with iOS 15.0 and later
-          - 🔄 The app will need periodic refreshing every 7 days (with free Apple ID)
+          - 📱 Compatible with iOS 13.0 and later (iPhone 7 and newer)
+          - 🔄 With AltStore/Sideloadly: App needs refreshing every 7 days (free Apple ID)
+          - ✅ With TrollStore: Permanent install, no re-signing needed
           - 🚫 Not available on the App Store
           
           ---
