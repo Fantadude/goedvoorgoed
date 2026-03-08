@@ -29,8 +29,9 @@ on:
 
 jobs:
   build-ios-unsigned-ipa:
-    runs-on: macos-latest
+    runs-on: macos-14
     name: Build Unsigned iOS IPA
+    timeout-minutes: 45
     
     steps:
       - name: Checkout code
@@ -43,7 +44,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Cache Gradle and Konan
         uses: actions/cache@v4
@@ -80,7 +81,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install xcodegen
+          brew install xcodegen imagemagick
 
       - name: Prepare Xcode Project
         run: |
@@ -209,12 +210,6 @@ jobs:
           }
           EOF
           
-          # Install ImageMagick for image conversion if not present
-          if ! command -v convert &> /dev/null; then
-            echo "Installing ImageMagick..."
-            brew install imagemagick
-          fi
-          
           # Convert Android icon to PNG and generate all iOS icon sizes
           # Use the Android logo as the source
           SOURCE_ICON="../composeApp/src/main/res/drawable/logo_gvg.webp"
@@ -265,6 +260,16 @@ jobs:
           }
           EOF
           
+          # Validate shared framework exists before generating project
+          FRAMEWORK_PATH="../shared/build/bin/iosArm64/releaseFramework/shared.framework"
+          if [ ! -d "$FRAMEWORK_PATH" ]; then
+            echo "❌ Shared framework not found at expected path: $FRAMEWORK_PATH"
+            echo "Searching for framework in shared/build..."
+            find ../shared/build -name "*.framework" -type d 2>/dev/null || echo "No frameworks found"
+            exit 1
+          fi
+          echo "✅ Shared framework validated at: $FRAMEWORK_PATH"
+          
           # Create project.yml for xcodegen with bundle identifier
           cat > project.yml << 'EOF'
           name: GoedVoorGoed
@@ -291,6 +296,11 @@ jobs:
           
           # Generate the Xcode project
           xcodegen generate
+          if [ $? -ne 0 ]; then
+            echo "❌ xcodegen failed to generate project"
+            exit 1
+          fi
+          echo "✅ Xcode project generated successfully"
 
       - name: Build for iOS Device
         run: |
@@ -406,10 +416,11 @@ jobs:
           echo "======================================"
 
   publish-pre-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Publish to Pre-Releases
     needs: build-ios-unsigned-ipa
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 10
     permissions:
       contents: write
       actions: read
@@ -423,6 +434,7 @@ jobs:
         with:
           name: ios-unsigned-ipa
           path: ios-build
+          if-no-files-found: error
 
       - name: Generate Release Info
         id: release-info
@@ -513,7 +525,7 @@ jobs:
 
       - name: Create/Update Pre-Release
         id: create-release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release-info.outputs.tag }}
           name: ${{ steps.release-info.outputs.name }}
@@ -521,7 +533,7 @@ jobs:
           draft: false
           prerelease: true
           files: ios-build/*.ipa
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
