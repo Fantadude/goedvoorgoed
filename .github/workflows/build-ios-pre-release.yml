@@ -86,7 +86,186 @@ jobs:
         run: |
           cd iosApp
           
-          # Create project.yml for xcodegen
+          # Create Assets.xcassets directory structure for app icons
+          mkdir -p GoedVoorGoed/Assets.xcassets/AppIcon.appiconset
+          
+          # Create Contents.json for AppIcon.appiconset
+          cat > GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Contents.json << 'EOF'
+          {
+            "images" : [
+              {
+                "filename" : "Icon-20x20@2x.png",
+                "idiom" : "iphone",
+                "scale" : "2x",
+                "size" : "20x20"
+              },
+              {
+                "filename" : "Icon-20x20@3x.png",
+                "idiom" : "iphone",
+                "scale" : "3x",
+                "size" : "20x20"
+              },
+              {
+                "filename" : "Icon-29x29@2x.png",
+                "idiom" : "iphone",
+                "scale" : "2x",
+                "size" : "29x29"
+              },
+              {
+                "filename" : "Icon-29x29@3x.png",
+                "idiom" : "iphone",
+                "scale" : "3x",
+                "size" : "29x29"
+              },
+              {
+                "filename" : "Icon-40x40@2x.png",
+                "idiom" : "iphone",
+                "scale" : "2x",
+                "size" : "40x40"
+              },
+              {
+                "filename" : "Icon-40x40@3x.png",
+                "idiom" : "iphone",
+                "scale" : "3x",
+                "size" : "40x40"
+              },
+              {
+                "filename" : "Icon-60x60@2x.png",
+                "idiom" : "iphone",
+                "scale" : "2x",
+                "size" : "60x60"
+              },
+              {
+                "filename" : "Icon-60x60@3x.png",
+                "idiom" : "iphone",
+                "scale" : "3x",
+                "size" : "60x60"
+              },
+              {
+                "filename" : "Icon-20x20@1x.png",
+                "idiom" : "ipad",
+                "scale" : "1x",
+                "size" : "20x20"
+              },
+              {
+                "filename" : "Icon-20x20@2x.png",
+                "idiom" : "ipad",
+                "scale" : "2x",
+                "size" : "20x20"
+              },
+              {
+                "filename" : "Icon-29x29@1x.png",
+                "idiom" : "ipad",
+                "scale" : "1x",
+                "size" : "29x29"
+              },
+              {
+                "filename" : "Icon-29x29@2x.png",
+                "idiom" : "ipad",
+                "scale" : "2x",
+                "size" : "29x29"
+              },
+              {
+                "filename" : "Icon-40x40@1x.png",
+                "idiom" : "ipad",
+                "scale" : "1x",
+                "size" : "40x40"
+              },
+              {
+                "filename" : "Icon-40x40@2x.png",
+                "idiom" : "ipad",
+                "scale" : "2x",
+                "size" : "40x40"
+              },
+              {
+                "filename" : "Icon-76x76@1x.png",
+                "idiom" : "ipad",
+                "scale" : "1x",
+                "size" : "76x76"
+              },
+              {
+                "filename" : "Icon-76x76@2x.png",
+                "idiom" : "ipad",
+                "scale" : "2x",
+                "size" : "76x76"
+              },
+              {
+                "filename" : "Icon-83.5x83.5@2x.png",
+                "idiom" : "ipad",
+                "scale" : "2x",
+                "size" : "83.5x83.5"
+              },
+              {
+                "filename" : "Icon-1024x1024@1x.png",
+                "idiom" : "ios-marketing",
+                "scale" : "1x",
+                "size" : "1024x1024"
+              }
+            ],
+            "info" : {
+              "author" : "xcode",
+              "version" : 1
+            }
+          }
+          EOF
+          
+          # Install ImageMagick for image conversion if not present
+          if ! command -v convert &> /dev/null; then
+            echo "Installing ImageMagick..."
+            brew install imagemagick
+          fi
+          
+          # Convert Android icon to PNG and generate all iOS icon sizes
+          # Use the Android logo as the source
+          SOURCE_ICON="../composeApp/src/main/res/drawable/logo_gvg.webp"
+          
+          if [ -f "$SOURCE_ICON" ]; then
+            echo "Generating iOS app icons from Android icon..."
+            
+            # Create a temporary square version with padding (iOS icons are square)
+            convert "$SOURCE_ICON" -resize 1024x1024 -background transparent -gravity center -extent 1024x1024 /tmp/icon_base.png
+            
+            # Generate all required sizes
+            # iPhone sizes
+            convert /tmp/icon_base.png -resize 40x40 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-20x20@2x.png"
+            convert /tmp/icon_base.png -resize 60x60 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-20x20@3x.png"
+            convert /tmp/icon_base.png -resize 58x58 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-29x29@2x.png"
+            convert /tmp/icon_base.png -resize 87x87 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-29x29@3x.png"
+            convert /tmp/icon_base.png -resize 80x80 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-40x40@2x.png"
+            convert /tmp/icon_base.png -resize 120x120 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-40x40@3x.png"
+            convert /tmp/icon_base.png -resize 120x120 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-60x60@2x.png"
+            convert /tmp/icon_base.png -resize 180x180 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-60x60@3x.png"
+            
+            # iPad sizes
+            convert /tmp/icon_base.png -resize 20x20 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-20x20@1x.png"
+            convert /tmp/icon_base.png -resize 29x29 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-29x29@1x.png"
+            convert /tmp/icon_base.png -resize 40x40 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-40x40@1x.png"
+            convert /tmp/icon_base.png -resize 76x76 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-76x76@1x.png"
+            convert /tmp/icon_base.png -resize 152x152 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-76x76@2x.png"
+            convert /tmp/icon_base.png -resize 167x167 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-83.5x83.5@2x.png"
+            
+            # App Store size
+            convert /tmp/icon_base.png -resize 1024x1024 "GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/Icon-1024x1024@1x.png"
+            
+            echo "✅ iOS app icons generated successfully"
+            ls -la GoedVoorGoed/Assets.xcassets/AppIcon.appiconset/
+          else
+            echo "⚠️ Android icon not found at $SOURCE_ICON"
+            echo "Available icons:"
+            find ../composeApp/src -name "*.webp" -o -name "*.png" 2>/dev/null | head -10
+          fi
+          
+          # Create Assets.xcassets main Contents.json
+          cat > GoedVoorGoed/Assets.xcassets/Contents.json << 'EOF'
+          {
+            "info" : {
+              "author" : "xcode",
+              "version" : 1
+            }
+          }
+          EOF
+          
+          # Create project.yml for xcodegen with bundle identifier
           cat > project.yml << 'EOF'
           name: GoedVoorGoed
           targets:
@@ -96,10 +275,16 @@ jobs:
               deploymentTarget: "14.0"
               sources:
                 - GoedVoorGoed
+              resources:
+                - GoedVoorGoed/Assets.xcassets
               dependencies:
                 - framework: ../shared/build/bin/iosArm64/releaseFramework/shared.framework
                   embed: true
                   link: true
+              settings:
+                base:
+                  PRODUCT_BUNDLE_IDENTIFIER: com.example.goedvoorgoed.iosApp
+                  ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
               info:
                 path: GoedVoorGoed/Info.plist
           EOF
