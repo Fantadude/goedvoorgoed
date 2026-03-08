@@ -106,11 +106,12 @@ jobs:
                   PRODUCT_BUNDLE_IDENTIFIER: com.example.goedvoorgoed.iosApp
                   EXECUTABLE_NAME: GoedVoorGoed
                   PRODUCT_NAME: GoedVoorGoed
-                  CODE_SIGNING_ALLOWED: YES
+                  CODE_SIGNING_ALLOWED: NO
                   CODE_SIGNING_REQUIRED: NO
-                  CODE_SIGN_IDENTITY: "-"
+                  CODE_SIGN_IDENTITY: ""
                   PROVISIONING_PROFILE: ""
                   PROVISIONING_PROFILE_SPECIFIER: ""
+                  CODE_SIGN_STYLE: Manual
                   SWIFT_VERSION: "5.0"
                   FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/../shared/build/bin/iosArm64/releaseFramework"
                   LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
@@ -134,8 +135,7 @@ jobs:
           # Create build directory first
           mkdir -p build/Products
           
-          # Build for device (does not require signing for unsigned IPA)
-          # Use generic/platform=iOS to build for device architecture
+          # Build for device - disable all code signing for unsigned IPA (TrollStore compatible)
           set -o pipefail
           xcodebuild build \
             -project GoedVoorGoed.xcodeproj \
@@ -143,10 +143,15 @@ jobs:
             -destination "generic/platform=iOS" \
             -configuration Release \
             -derivedDataPath "$(pwd)/build/DerivedData" \
-            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_IDENTITY="" \
+            EXPANDED_CODE_SIGN_IDENTITY="" \
             PROVISIONING_PROFILE="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            CODE_SIGN_STYLE=Manual \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            ENABLE_BITCODE=NO \
             CONFIGURATION_BUILD_DIR="$(pwd)/build/Products/Release-iphoneos" \
             | xcpretty || cat
           
