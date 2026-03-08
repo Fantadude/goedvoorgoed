@@ -80,7 +80,7 @@ jobs:
             GoedVoorGoed:
               type: application
               platform: iOS
-              deploymentTarget: "15.0"
+              deploymentTarget: "13.0"
               sources:
                 - GoedVoorGoed
               settings:
@@ -121,7 +121,7 @@ jobs:
           xcodebuild build \
             -project GoedVoorGoed.xcodeproj \
             -scheme GoedVoorGoed \
-            -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" \
+            -destination "platform=iOS Simulator,name=iPhone 16" \
             -configuration Release \
             -derivedDataPath "$(pwd)/build/DerivedData" \
             CODE_SIGNING_ALLOWED=NO \
