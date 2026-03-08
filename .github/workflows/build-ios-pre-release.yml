@@ -93,7 +93,7 @@ jobs:
             GoedVoorGoed:
               type: application
               platform: iOS
-              deploymentTarget: "13.0"
+              deploymentTarget: "14.0"
               sources:
                 - GoedVoorGoed
               dependencies:
@@ -269,7 +269,7 @@ jobs:
           - **Commit:** \`$SHORT_SHA\`
           - **Branch:** ${{ github.ref_name }}
           - **Target:** iOS Device (arm64) - TrollStore compatible
-          - **Min iOS Version:** 13.0
+          - **Min iOS Version:** 14.0
           
           ### Features
           This IPA includes the same UI look and feel as the Android app:
@@ -308,7 +308,7 @@ jobs:
           
           ### Important Notes
           - ⚠️ This is an **unsigned** IPA and requires sideloading
-          - 📱 Compatible with iOS 13.0 and later (iPhone 7 and newer)
+          - 📱 Compatible with iOS 14.0 and later (iPhone 6s/7 and newer)
           - 🔄 With AltStore/Sideloadly: App needs refreshing every 7 days (free Apple ID)
           - ✅ With TrollStore: Permanent install, no re-signing needed
           - 🚫 Not available on the App Store
