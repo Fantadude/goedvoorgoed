@@ -1,0 +1,386 @@
+name: Build iOS Unsigned IPA and Publish to Pre-Releases
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'iosApp/**'
+      - 'shared/**'
+      - 'gradle/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - '.github/workflows/build-ios-pre-release.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'iosApp/**'
+      - 'shared/**'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., v1.0.0-ios). Leave empty for auto-generated.'
+        required: false
+        type: string
+      release_name:
+        description: 'Release name. Leave empty for auto-generated.'
+        required: false
+        type: string
+
+jobs:
+  build-ios-framework:
+    runs-on: macos-latest
+    name: Build iOS Kotlin/Native Framework
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Cache Gradle and Konan
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.konan/dependencies
+            ~/.konan/kotlin-native-macos*
+          key: ${{ runner.os }}-gradle-konan-${{ hashFiles('**/*.gradle*') }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build iOS Frameworks
+        run: |
+          ./gradlew :shared:linkIosSimulatorArm64
+          ./gradlew :shared:linkIosArm64 || echo "Arm64 device build may require additional setup"
+          ./gradlew :shared:linkIosX64 || echo "X64 simulator build may require additional setup"
+
+      - name: Package Frameworks
+        run: |
+          mkdir -p ios-frameworks-output
+          find shared/build/bin -name "*.framework" -type d -exec cp -R {} ios-frameworks-output/ \; 2>/dev/null || true
+          ls -la ios-frameworks-output/ || echo "No frameworks found"
+
+      - name: Upload iOS Frameworks
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-shared-frameworks
+          path: |
+            ios-frameworks-output/
+            shared/build/bin/
+          if-no-files-found: warn
+          retention-days: 14
+
+  build-ios-unsigned-ipa:
+    runs-on: macos-latest
+    name: Build Unsigned iOS IPA
+    needs: build-ios-framework
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Cache Gradle and Konan
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.konan
+          key: ${{ runner.os }}-gradle-konan-${{ hashFiles('**/*.gradle*') }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build iOS Framework
+        run: ./gradlew :shared:linkIosArm64
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install dependencies
+        run: |
+          brew install xcodegen
+
+      - name: Prepare Xcode Project
+        run: |
+          cd iosApp
+          
+          # Create project.yml for xcodegen
+          cat > project.yml << 'EOF'
+          name: GoedVoorGoed
+          targets:
+            GoedVoorGoed:
+              type: application
+              platform: iOS
+              deploymentTarget: "15.0"
+              sources:
+                - GoedVoorGoed
+              settings:
+                base:
+                  INFOPLIST_FILE: GoedVoorGoed/Info.plist
+                  PRODUCT_BUNDLE_IDENTIFIER: com.example.goedvoorgoed.iosApp
+                  CODE_SIGNING_ALLOWED: NO
+                  CODE_SIGNING_REQUIRED: NO
+                  CODE_SIGN_IDENTITY: ""
+                  PROVISIONING_PROFILE: ""
+                  PROVISIONING_PROFILE_SPECIFIER: ""
+                  SWIFT_VERSION: "5.0"
+                  LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
+                  FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/../shared/build/bin/iosArm64/releaseFramework $(PROJECT_DIR)/../shared/build/bin/iosSimulatorArm64/releaseFramework $(PROJECT_DIR)/../shared/build/bin/iosX64/releaseFramework"
+                  OTHER_LDFLAGS: "$(inherited) -framework shared"
+                  ARCHS: "arm64"
+                  SUPPORTED_PLATFORMS: "iphoneos"
+                  TARGETED_DEVICE_FAMILY: "1,2"
+                  ENABLE_BITCODE: NO
+                  ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+              info:
+                path: GoedVoorGoed/Info.plist
+              entitlements:
+                path: GoedVoorGoed/GoedVoorGoed.entitlements
+                properties:
+                  get-task-allow: true
+          EOF
+          
+          # Create entitlements file for unsigned build
+          mkdir -p GoedVoorGoed
+          cat > GoedVoorGoed/GoedVoorGoed.entitlements << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>get-task-allow</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          
+          # Generate the Xcode project
+          xcodegen generate
+
+      - name: Build Unsigned IPA
+        run: |
+          cd iosApp
+          
+          # Build for generic iOS device (arm64) without signing
+          xcodebuild archive \
+            -project GoedVoorGoed.xcodeproj \
+            -scheme GoedVoorGoed \
+            -archivePath build/GoedVoorGoed.xcarchive \
+            -destination "generic/platform=iOS" \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            ONLY_ACTIVE_ARCH=NO \
+            ARCHS="arm64" \
+            | xcpretty || cat
+          
+          # Create the Payload directory structure
+          mkdir -p build/Payload
+          
+          # Copy the app from the archive
+          cp -R build/GoedVoorGoed.xcarchive/Products/Applications/GoedVoorGoed.app build/Payload/ 2>/dev/null || \
+          cp -R build/GoedVoorGoed.xcarchive/Products/Applications/*.app build/Payload/ 2>/dev/null || \
+          echo "App not found in expected location"
+          
+          # List what we have
+          echo "=== Checking Payload contents ==="
+          ls -la build/Payload/ || echo "Payload directory empty"
+          find build -name "*.app" -type d || echo "No .app found"
+          
+          # Create the IPA file (unsigned)
+          if [ -d "build/Payload/GoedVoorGoed.app" ] || [ -d "build/Payload/$(ls build/Payload/ | head -n 1)" ]; then
+            cd build
+            zip -r ../GoedVoorGoed-unsigned.ipa Payload
+            cd ..
+            echo "✅ Created unsigned IPA"
+          else
+            echo "❌ Could not find app bundle to create IPA"
+            exit 1
+          fi
+
+      - name: Verify IPA Creation
+        run: |
+          cd iosApp
+          
+          if [ -f "GoedVoorGoed-unsigned.ipa" ]; then
+            echo "✅ IPA file created successfully"
+            ls -lh GoedVoorGoed-unsigned.ipa
+            
+            # Verify IPA structure
+            unzip -l GoedVoorGoed-unsigned.ipa | head -20
+          else
+            echo "❌ IPA file not found"
+            exit 1
+          fi
+
+      - name: Upload iOS IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: |
+            iosApp/GoedVoorGoed-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "=== iOS Unsigned IPA Build Summary ==="
+          ls -la iosApp/ 2>/dev/null || echo "iosApp directory not found"
+          find iosApp -name "*.ipa" -type f 2>/dev/null || echo "No IPA files found"
+          echo "======================================"
+
+  publish-pre-release:
+    runs-on: ubuntu-latest
+    name: Publish to Pre-Releases
+    needs: build-ios-unsigned-ipa
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download IPA Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: ios-build
+
+      - name: Generate Release Info
+        id: release-info
+        run: |
+          # Auto-generate tag if not provided
+          if [ -n "${{ github.event.inputs.release_tag }}" ]; then
+            TAG="${{ github.event.inputs.release_tag }}"
+          else
+            TAG="ios-$(date +'%Y.%m.%d')-${{ github.run_number }}"
+          fi
+          
+          # Auto-generate name if not provided
+          if [ -n "${{ github.event.inputs.release_name }}" ]; then
+            NAME="${{ github.event.inputs.release_name }}"
+          else
+            NAME="iOS Pre-Release $(date +'%Y-%m-%d') - Build ${{ github.run_number }}"
+          fi
+          
+          # Generate release notes
+          COMMIT_SHA=${{ github.sha }}
+          SHORT_SHA=$(echo $COMMIT_SHA | cut -c1-7)
+          
+          NOTES="## iOS Unsigned IPA Pre-Release
+          
+          This pre-release contains an **unsigned iOS IPA** that can be sideloaded onto iOS devices.
+          
+          ### Build Information
+          - **Build Date:** $(date +'%Y-%m-%d %H:%M:%S UTC')
+          - **Commit:** \`$SHORT_SHA\`
+          - **Branch:** ${{ github.ref_name }}
+          
+          ### Features
+          This IPA includes the same UI look and feel as the Android app:
+          - **Home Screen** - Welcome page with quick navigation
+          - **GOED Nieuws!** - Latest news from goedvoorgoed.nl with article viewer
+          - **Halen & Brengen** - Pickup and delivery locations with contact info
+          - **Cherity Re-Use** - Information about the charity program
+          - **Openingstijden** - Opening hours for all locations
+          - **Contact** - Contact information for all locations
+          
+          ### Installation Instructions
+          
+          To install this unsigned IPA, you can use one of the following methods:
+          
+          #### Option 1: AltStore (Recommended)
+          1. Install AltStore on your iOS device (from altstore.io)
+          2. Download this IPA to your computer
+          3. Use AltServer to sideload the IPA to your device
+          4. The app will need to be refreshed every 7 days
+          
+          #### Option 2: Sideloadly
+          1. Download Sideloadly (sideloadly.io)
+          2. Connect your iOS device to your computer
+          3. Drag and drop the IPA into Sideloadly
+          4. Enter your Apple ID credentials
+          5. Install the app on your device
+          
+          #### Option 3: Other Sideloading Tools
+          - TrollStore (iOS 14.0 - 17.0)
+          - Scarlet
+          - Any other compatible sideloading solution
+          
+          ### Important Notes
+          - ⚠️ This is an **unsigned** IPA and requires sideloading
+          - 📱 Compatible with iOS 15.0 and later
+          - 🔄 The app will need periodic refreshing (every 7 days with free Apple ID)
+          - 🚫 Not available on the App Store
+          
+          ---
+          *This is a pre-release. Features and functionality may change.*"
+          
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          
+          # Write multi-line release notes
+          {
+            echo 'notes<<EOF'
+            echo "$NOTES"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Create/Update Pre-Release
+        id: create-release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.release-info.outputs.tag }}
+          name: ${{ steps.release-info.outputs.name }}
+          body: ${{ steps.release-info.outputs.notes }}
+          draft: false
+          prerelease: true
+          files: ios-build/*.ipa
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "📱 iOS Pre-Release Summary"
+          echo "=========================================="
+          if [ "${{ steps.create-release.outputs.url }}" != "" ]; then
+            echo "✅ Pre-Release Published!"
+            echo "🔗 URL: ${{ steps.create-release.outputs.url }}"
+            echo "🏷️  Tag: ${{ steps.release-info.outputs.tag }}"
+          else
+            echo "❌ Pre-release creation failed"
+          fi
+          echo ""
+          echo "📦 IPA included:"
+          find ios-build -name "*.ipa" -type f 2>/dev/null || echo "None found"
+          echo "=========================================="

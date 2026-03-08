@@ -22,38 +22,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -68,7 +57,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -79,7 +67,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.goedvoorgoed.data.AppData
 import com.example.goedvoorgoed.data.NewsItem
-import com.example.goedvoorgoed.data.NewsRepository
 import com.example.goedvoorgoed.network.GoedvoorgoedScraper
 import com.example.goedvoorgoed.ui.theme.GoedvoorgoedTheme
 
@@ -431,22 +418,6 @@ fun NieuwsScreen(onBackClick: () -> Unit = {}, onOpenArticle: (NewsItem) -> Unit
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "GOED Nieuws!", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
-                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
-                actions = {
-                    IconButton(onClick = { refreshTrigger++ }, enabled = !isLoading) {
-                        if (isLoading) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.Refresh, "Vernieuwen", tint = MaterialTheme.colorScheme.onPrimary)
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
-            )
-        },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -574,13 +545,7 @@ fun ContactScreen(
     onWebsiteClick: (String) -> Unit = {}
 ) {
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Contact", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
-                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding).padding(16.dp)) {
             items(AppData.contactLocations.size) { index ->
@@ -604,47 +569,18 @@ fun ContactScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HalenBrengenScreen(onBackClick: () -> Unit = {}, onOpenEmail: (String, String) -> Unit = { _, _ -> }) {
-    var showLocationDialog by remember { mutableStateOf(false) }
-
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Halen & Brengen", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
-                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding).padding(16.dp)) {
-            // Header text
+            // New header text
             item {
                 Text(
-                    text = "Spullen ophalen of brengen?",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "Wij halen grote meubels graag bij u op. Ook kunt u zelf spullen brengen naar een van onze locaties.",
+                    text = "Mail ons gerust voor een afspraak. LET OP: het kan even duren voordat we terug kunnen reageren. U kunt ook de spullen bij ons komen brengen. zie hiervoor de innametijden per locatie. houd ook onze socials in de gaten.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-            }
-
-            // "Neem contact op" button
-            item {
-                Button(
-                    onClick = { showLocationDialog = true },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Neem contact op", style = MaterialTheme.typography.labelLarge)
-                }
             }
 
             // Location cards
@@ -666,119 +602,6 @@ fun HalenBrengenScreen(onBackClick: () -> Unit = {}, onOpenEmail: (String, Strin
             }
         }
     }
-
-    // Location selection dialog
-    if (showLocationDialog) {
-        LocationSelectionDialog(
-            onLocationSelected = { email, locationName ->
-                showLocationDialog = false
-                onOpenEmail(email, locationName)
-            },
-            onDismiss = { showLocationDialog = false }
-        )
-    }
-}
-
-// Location data for the dialog (only the 4 specified locations)
-private val halenBrengenLocationsForDialog = listOf(
-    Triple("Sommelsdijk", "Gerard Walschapstraat 9", "sommelsdijk@goedvoorgoed.nl"),
-    Triple("Oude-Tonge", "Energiebaan 2a", "oudetonge@goedvoorgoed.nl"),
-    Triple("Stellendam", "Delta-Industrieweg 38", "stellendam@goedvoorgoed.nl"),
-    Triple("Halsteren", "Tholenseweg 4", "halsteren@goedvoorgoed.nl")
-)
-
-@Composable
-private fun LocationSelectionDialog(
-    onLocationSelected: (String, String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Kies een locatie",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-            ) {
-                Text(
-                    text = "Selecteer de locatie waar u contact mee wilt opnemen:",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                halenBrengenLocationsForDialog.forEach { (name, address, email) ->
-                    Card(
-                        onClick = { onLocationSelected(email, name) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Column {
-                                Text(
-                                    text = name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.Bold
-                                )
-
-                                Text(
-                                    text = address,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Mail ons gerust voor een afspraak. LET OP: het kan even duren voordat we terug kunnen reageren.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    textAlign = TextAlign.Center
-                )
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = "Annuleren",
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -792,13 +615,7 @@ fun OpeningstijdenScreen(onBackClick: () -> Unit = {}) {
     )
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Openingstijden", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
-                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding).padding(16.dp)) {
             items(locations.size) { index ->
@@ -825,13 +642,7 @@ fun OpeningstijdenScreen(onBackClick: () -> Unit = {}) {
 @Composable
 fun CherityReUseScreen(onBackClick: () -> Unit = {}) {
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Cherity Re-Use", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) },
-                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding).padding(16.dp)) {
             item {
@@ -879,24 +690,6 @@ fun ArticleDetailScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        text = "Artikel",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    ) 
-                },
-                navigationIcon = { 
-                    IconButton(onClick = onBackClick) { 
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug", tint = MaterialTheme.colorScheme.onPrimary) 
-                    } 
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
-            )
-        },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
