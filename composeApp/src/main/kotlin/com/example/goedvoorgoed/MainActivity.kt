@@ -70,18 +70,6 @@ import com.example.goedvoorgoed.data.NewsItem
 import com.example.goedvoorgoed.network.GoedvoorgoedScraper
 import com.example.goedvoorgoed.ui.theme.GoedvoorgoedTheme
 
-// Enum for navigation screens
-enum class Screen {
-    HOME, NIEUWS, HALEN_BRENGEN, CHERITY, OPENINGSTIJDEN, CONTACT, ARTICLE_DETAIL
-}
-
-data class BottomNavItem(
-    val screen: Screen,
-    val title: String,
-    val icon: ImageVector? = null,
-    val iconRes: Int? = null
-)
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -146,12 +134,12 @@ fun GoedVoorGoedApp(
     val currentScreen = screens[currentScreenIndex]
 
     val navItems = listOf(
-        BottomNavItem(Screen.HOME, "Home", icon = Icons.Default.Home),
-        BottomNavItem(Screen.NIEUWS, "GOED Nieuws!", icon = Icons.Default.Info),
-        BottomNavItem(Screen.HALEN_BRENGEN, "Halen & Brengen", iconRes = R.drawable.delivery_truck),
-        BottomNavItem(Screen.CHERITY, "Cherity Re-Use", icon = Icons.Default.ThumbUp),
-        BottomNavItem(Screen.OPENINGSTIJDEN, "Openingstijden", icon = Icons.Default.DateRange),
-        BottomNavItem(Screen.CONTACT, "Contact", icon = Icons.Default.Email)
+        BottomNavItem(Screen.HOME, "Home", Icons.Default.Home),
+        BottomNavItem(Screen.NIEUWS, "GOED Nieuws!", Icons.Default.Info),
+        BottomNavItem(Screen.HALEN_BRENGEN, "Halen & Brengen", Icons.Default.Email),
+        BottomNavItem(Screen.CHERITY, "Cherity Re-Use", Icons.Default.ThumbUp),
+        BottomNavItem(Screen.OPENINGSTIJDEN, "Openingstijden", Icons.Default.DateRange),
+        BottomNavItem(Screen.CONTACT, "Contact", Icons.Default.Email)
     )
 
     // Show Article Detail Screen if article is selected
@@ -174,19 +162,11 @@ fun GoedVoorGoedApp(
                     val isSelected = currentScreenIndex == index
                     NavigationBarItem(
                         icon = {
-                            when {
-                                item.iconRes != null -> Icon(
-                                    painter = painterResource(item.iconRes),
-                                    contentDescription = item.title,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = Color.Unspecified
-                                )
-                                item.icon != null -> Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.title,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.title,
+                                modifier = Modifier.size(20.dp)
+                            )
                         },
                         label = {
                             Text(
