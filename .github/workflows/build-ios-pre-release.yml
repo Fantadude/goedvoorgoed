@@ -58,7 +58,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build iOS Framework (Simulator)
-        run: ./gradlew :shared:linkIosSimulatorArm64ReleaseFramework
+        run: ./gradlew :shared:linkReleaseFrameworkIosSimulatorArm64
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
