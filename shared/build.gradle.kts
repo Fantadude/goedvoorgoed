@@ -20,13 +20,9 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    // Configure iOS framework binaries
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
+    // Configure iOS framework binaries for simulator only (to support CI builds)
+    (targets.findByName("iosSimulatorArm64") as? org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget)?.apply {
+        binaries.framework {
             baseName = "shared"
             isStatic = true
         }
