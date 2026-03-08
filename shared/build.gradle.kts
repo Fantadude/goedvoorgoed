@@ -20,7 +20,13 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    // Configure iOS framework binaries for simulator only (to support CI builds)
+    // Configure iOS framework binaries for both device and simulator (to support TrollStore CI builds)
+    (targets.findByName("iosArm64") as? org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget)?.apply {
+        binaries.framework {
+            baseName = "shared"
+            isStatic = true
+        }
+    }
     (targets.findByName("iosSimulatorArm64") as? org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget)?.apply {
         binaries.framework {
             baseName = "shared"
